@@ -183,6 +183,10 @@ bot.action("wd_binance", (ctx) => askNumber(ctx, "Binance"));
 
 /* ================= MESSAGE ================= */      
 bot.on("text", async (ctx) => {      
+
+  // 🔥 FIX: ignore commands
+  if (ctx.message.text.startsWith("/")) return;
+
   const db = loadDB();      
   const id = ctx.from.id;      
 
@@ -248,7 +252,7 @@ Number: ${state.number}`,
     }      
   }      
 
-  // 🔥 FIXED pending trigger
+  // 🔥 pending trigger
   if (ctx.message.text === "/pending") {
     if (ctx.from.id !== config.ADMIN_ID) {
       return ctx.reply("❌ Not allowed");
