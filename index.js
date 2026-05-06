@@ -239,48 +239,55 @@ Number: ${state.number}`,
 
 /* ================= 🔥 FIXED /PENDING ================= */      
 bot.command("pending", async (ctx) => {      
-  if (ctx.from.id !== config.ADMIN_ID) return ctx.reply("❌ Not allowed");      
+  if (ctx.from.id !== config.ADMIN_ID) {
+    return ctx.reply("❌ Not allowed");
+  }
 
-  const count = Object.keys(pendingRequests).length;      
+  const count = Object.keys(pendingRequests).length;
 
-  return ctx.reply(      
-    `📊 Total Pending Withdraw: ${count}`,      
-    Markup.inlineKeyboard([      
-      [Markup.button.callback("📋 Pending Withdraw", "view_pending")]      
-    ])      
-  );      
-});      
+  if (count === 0) {
+    return ctx.reply("📊 Total Pending Withdraw: 0\n\n✅ No pending requests");
+  }
 
-bot.action("view_pending", async (ctx) => {      
-  if (ctx.from.id !== config.ADMIN_ID) return;      
+  return ctx.reply(
+    `📊 Total Pending Withdraw: ${count}`,
+    Markup.inlineKeyboard([
+      [Markup.button.callback("📋 Pending Withdraw", "view_pending_all")]
+    ])
+  );
+});
 
-  const keys = Object.keys(pendingRequests);      
+/* ================= VIEW ALL PENDING (FIXED) ================= */
+bot.action("view_pending_all", async (ctx) => {
+  if (ctx.from.id !== config.ADMIN_ID) return;
 
-  if (keys.length === 0) {      
-    return ctx.reply("✅ No pending requests");      
-  }      
+  const keys = Object.keys(pendingRequests);
 
-  for (const requestId of keys) {      
-    const req = pendingRequests[requestId];      
+  if (keys.length === 0) {
+    return ctx.reply("✅ No pending requests");
+  }
 
-    await bot.telegram.sendMessage(      
-      config.ADMIN_ID,      
-      `💸 Withdraw Request      
+  for (const requestId of keys) {
+    const req = pendingRequests[requestId];
 
-ID: ${requestId}      
-User: ${req.userId}      
-Username: @${req.username || "NoUsername"}      
-Amount: $${req.amount}      
-Method: ${req.method}      
-Number: ${req.number}`,      
-      Markup.inlineKeyboard([      
-        [      
-          Markup.button.callback("✅ Approve", `approve_${requestId}_${req.userId}_${req.amount}`),      
-          Markup.button.callback("❌ Reject", `reject_${requestId}_${req.userId}_${req.amount}`)      
-        ]      
-      ])      
-    );      
-  }      
+    await bot.telegram.sendMessage(
+      config.ADMIN_ID,
+      `💸 Withdraw Request
+
+ID: ${requestId}
+User: ${req.userId}
+Username: @${req.username || "NoUsername"}
+Amount: $${req.amount}
+Method: ${req.method}
+Number: ${req.number}`,
+      Markup.inlineKeyboard([
+        [
+          Markup.button.callback("✅ Approve", `approve_${requestId}_${req.userId}_${req.amount}`),
+          Markup.button.callback("❌ Reject", `reject_${requestId}_${req.userId}_${req.amount}`)
+        ]
+      ])
+    );
+  }
 });      
 
 /* ================= APPROVE ================= */      
