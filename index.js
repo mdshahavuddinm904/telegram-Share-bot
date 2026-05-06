@@ -37,13 +37,6 @@ function joinMsg(ctx) {
   );      
 }      
 
-/* ================= MUST JOIN MIDDLEWARE ================= */      
-async function mustJoin(ctx, next) {      
-  const joined = await checkJoin(ctx);      
-  if (!joined) return joinMsg(ctx);      
-  return next();      
-}      
-
 /* ================= STATE ================= */      
 const withdrawState = {};      
 const pendingRequests = {};      
@@ -78,7 +71,6 @@ bot.start(async (ctx) => {
   return ctx.reply(getWelcome());      
 });      
 
-/* ================= WELCOME (NO CHANGE) ================= */      
 function getWelcome() {      
   return `🎉 Welcome!      
 
@@ -103,13 +95,10 @@ bot.action("check_join", async (ctx) => {
   db.users[id].joined = true;      
 
   const ref = db.users[id].referredBy;      
-
   if (ref && db.users[ref] && !db.users[id].rewarded) {      
     db.users[ref].balance += 20;      
     db.users[ref].referrals += 1;      
-
     bot.telegram.sendMessage(ref, "🎉 You earned $0.30 from referral!");      
-
     db.users[id].rewarded = true;      
   }      
 
@@ -117,15 +106,26 @@ bot.action("check_join", async (ctx) => {
   return ctx.reply(getWelcome());      
 });      
 
-/* ================= COMMANDS (ALL FIXED) ================= */
+/* ================= MIDDLEWARE ================= */      
+async function mustJoin(ctx, next) {      
+  const db = loadDB();      
+  const id = ctx.from.id;      
 
-// REFER
+  // admin bypass
+  if (id === config.ADMIN_ID) return next();      
+
+  const joined = await checkJoin(ctx);      
+  if (!joined) return joinMsg(ctx);      
+  return next();      
+}      
+
+/* ================= COMMANDS ================= */      
+
 bot.command("refer", mustJoin, (ctx) => {      
   const link = `https://t.me/${ctx.botInfo.username}?start=${ctx.from.id}`;      
   ctx.reply(`🔗 Your Link:\n${link}\n\n💰 Earn $0.30 per referral`);      
 });      
 
-// BALANCE
 bot.command("balance", mustJoin, (ctx) => {      
   const db = loadDB();      
   const user = db.users[ctx.from.id];      
@@ -139,7 +139,6 @@ bot.command("balance", mustJoin, (ctx) => {
 💸 Minimum Withdraw: $5`);      
 });      
 
-// BONUS (NO CHANGE)
 bot.command("bonus", mustJoin, (ctx) => {      
   const db = loadDB();      
   const user = db.users[ctx.from.id];      
@@ -151,12 +150,12 @@ bot.command("bonus", mustJoin, (ctx) => {
 
   user.balance += 0.30;      
   user.lastBonus = now;      
-
   saveDB(db);      
+
   ctx.reply("🎁 You received $0.35 bonus!");      
 });      
 
-// WITHDRAW (FIXED JOIN ISSUE)
+/* ================= WITHDRAW (FIXED) ================= */      
 bot.command("withdraw", mustJoin, (ctx) => {      
   ctx.reply(      
     "💸 Select Method:",      
@@ -169,7 +168,6 @@ bot.command("withdraw", mustJoin, (ctx) => {
   );      
 });      
 
-/* ================= WITHDRAW FLOW ================= */      
 function askNumber(ctx, method) {      
   withdrawState[ctx.from.id] = { step: "number", method };      
   ctx.reply(`Enter your ${method} number:`);      
@@ -181,10 +179,6 @@ bot.action("wd_binance", (ctx) => askNumber(ctx, "Binance"));
 
 /* ================= TEXT HANDLER ================= */      
 bot.on("text", async (ctx) => {      
-
-  // ❌ BLOCK ALL COMMANDS HERE
-  if (ctx.message.text.startsWith("/")) return;      
-
   const db = loadDB();      
   const id = ctx.from.id;      
 
@@ -193,10 +187,6 @@ bot.on("text", async (ctx) => {
     const user = db.users[id];      
 
     if (state.step === "number") {      
-      if (ctx.message.text.length < 5) {      
-        return ctx.reply("❌ Invalid number!");      
-      }      
-
       state.number = ctx.message.text;      
       state.step = "amount";      
       return ctx.reply("💰 Enter withdraw amount:");      
@@ -205,11 +195,7 @@ bot.on("text", async (ctx) => {
     if (state.step === "amount") {      
       const amount = Number(ctx.message.text);      
 
-      if (isNaN(amount)) {      
-        return ctx.reply("❌ Enter valid amount!");      
-      }      
-
-      if (!user || user.balance < amount || amount < 5) {      
+      if (isNaN(amount) || !user || user.balance < amount || amount < 5) {      
         delete withdrawState[id];      
         return ctx.reply("❌ Invalid amount");      
       }      
@@ -251,31 +237,30 @@ Number: ${state.number}`,
   }      
 });      
 
-/* ================= PENDING (FIXED) ================= */      
-bot.command("pending", mustJoin, (ctx) => {      
-  if (ctx.from.id !== config.ADMIN_ID) {      
-    return ctx.reply("❌ Not allowed");      
-  }      
+/* ================= 🔥 FIXED /PENDING ================= */      
+bot.command("pending", async (ctx) => {      
+  if (ctx.from.id !== config.ADMIN_ID) return ctx.reply("❌ Not allowed");      
 
   const count = Object.keys(pendingRequests).length;      
 
   return ctx.reply(      
-    `📊 Pending Requests: ${count}`,      
+    `📊 Total Pending Withdraw: ${count}`,      
     Markup.inlineKeyboard([      
-      [Markup.button.callback("📋 View Pending", "view_pending")]      
+      [Markup.button.callback("📋 Pending Withdraw", "view_pending")]      
     ])      
   );      
 });      
 
-/* ================= VIEW PENDING ================= */      
 bot.action("view_pending", async (ctx) => {      
   if (ctx.from.id !== config.ADMIN_ID) return;      
 
-  if (Object.keys(pendingRequests).length === 0) {      
+  const keys = Object.keys(pendingRequests);      
+
+  if (keys.length === 0) {      
     return ctx.reply("✅ No pending requests");      
   }      
 
-  for (const requestId in pendingRequests) {      
+  for (const requestId of keys) {      
     const req = pendingRequests[requestId];      
 
     await bot.telegram.sendMessage(      
@@ -298,7 +283,7 @@ Number: ${req.number}`,
   }      
 });      
 
-/* ================= APPROVE / REJECT (UNCHANGED) ================= */      
+/* ================= APPROVE ================= */      
 bot.action(/approve_(.+)_(.+)_(.+)/, async (ctx) => {      
   if (ctx.from.id !== config.ADMIN_ID) return;      
 
@@ -309,18 +294,19 @@ bot.action(/approve_(.+)_(.+)_(.+)/, async (ctx) => {
   const db = loadDB();      
   const user = db.users[userId];      
 
-  if (!user || user.lastRequest === requestId) return;      
+  if (!user || user.lastRequest === requestId) return ctx.answerCbQuery("Already done");      
 
   user.lastRequest = requestId;      
   delete pendingRequests[requestId];      
   saveDB(db);      
 
-  ctx.editMessageText(`✅ Approved & Paid      
+  await ctx.editMessageText(`✅ Approved & Paid      
 
 User: ${userId}      
 Amount: $${amount}`);      
 });      
 
+/* ================= REJECT ================= */      
 bot.action(/reject_(.+)_(.+)_(.+)/, async (ctx) => {      
   if (ctx.from.id !== config.ADMIN_ID) return;      
 
@@ -331,16 +317,19 @@ bot.action(/reject_(.+)_(.+)_(.+)/, async (ctx) => {
   const db = loadDB();      
   const user = db.users[userId];      
 
-  if (!user || user.lastRequest === requestId) return;      
+  if (!user || user.lastRequest === requestId) return ctx.answerCbQuery("Already done");      
 
   user.balance += amount;      
   user.lastRequest = requestId;      
   delete pendingRequests[requestId];      
   saveDB(db);      
 
-  ctx.editMessageText(`❌ Withdraw Rejected`);      
+  await ctx.editMessageText(`❌ Withdraw Rejected      
+User: ${userId}      
+Refunded: $${amount}`);      
 });      
 
+/* ================= START BOT ================= */      
 bot.catch(console.log);      
 bot.launch();      
 console.log("🚀 Bot Running...");
