@@ -151,7 +151,7 @@ bot.command("bonus", mustJoin, (ctx) => {
     return ctx.reply("⏳ Bonus available every 24 hours");
   }
 
-  user.balance += 0.30;
+  user.balance += 20;
   user.lastBonus = now;
 
   saveDB(db);
