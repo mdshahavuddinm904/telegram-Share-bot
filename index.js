@@ -32,7 +32,7 @@ function joinMsg(ctx) {
   return ctx.reply(
     "❌ You must join channel first!",
     Markup.inlineKeyboard([
-      [Markup.button.url("🌍 Join Channel", "https://t.me/Global_Method_Channel")],
+      [Markup.button.url("🌍 Join Channel", "https://t.me/Demo1BotUpdates")],
       [Markup.button.callback("✅ I Joined", "check_join")]
     ])
   );
