@@ -20,7 +20,7 @@ function saveDB(data) {
 /* ================= JOIN CHECK ================= */
 async function checkJoin(ctx) {
   try {
-    const res = await bot.telegram.getChatMember("@Smart_methdo37373773", ctx.from.id);
+    const res = await bot.telegram.getChatMember("@MiniDemoUpdate", ctx.from.id);
     return ["creator", "administrator", "member"].includes(res.status);
   } catch {
     return false;
@@ -32,7 +32,7 @@ function joinMsg(ctx) {
   return ctx.reply(
     "❌ You must join channel first!",
     Markup.inlineKeyboard([
-      [Markup.button.url("🌍 Join Channel", "https://t.me/Smart_methdo37373773")],
+      [Markup.button.url("🌍 Join Channel", "https://t.me/MiniDemoUpdate")],
       [Markup.button.callback("✅ I Joined", "check_join")]
     ])
   );
