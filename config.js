@@ -1,5 +1,5 @@
 module.exports = {
   BOT_TOKEN: "8709620585:AAGpH3w6e1OD1mNqVqf637WTF_Hm_k5W0g8",
   ADMIN_ID: 8136997138,
-  CHANNEL: "@Demo1BotUpdates"
+  CHANNEL: "@Smart_methdo37373773"
 };
