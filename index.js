@@ -20,7 +20,7 @@ function saveDB(data) {
 }
 
 /* ================= JOIN CHECK ================= */
-async function checkJoin(ctx) {
+async function checkJJoinoin(ctx) {
   try {
     const res = await bot.telegram.getChatMember(
       "@MiniDemoUpdate",
@@ -411,8 +411,8 @@ bot.action(/reject_(.+)_(.+)_(.+)/, async (ctx) => {
   );
 });
 
-/* ================= DELETE ================= */
-bot.command("delete", async (ctx) => {
+/* ================= USERS ================= */
+bot.command("users", async (ctx) => {
 
   if (ctx.from.id.toString() !== ADMIN_ID.toString()) {
     return ctx.reply("❌ Not allowed");
@@ -420,17 +420,13 @@ bot.command("delete", async (ctx) => {
 
   const db = loadDB();
 
-  Object.keys(db.users).forEach((id) => {
+  const totalUsers = Object.keys(db.users).length;
 
-    db.users[id].balance = 0;
-    db.users[id].referrals = 0;
-    db.users[id].rewarded = false;
-    db.users[id].joined = false;
-  });
+  ctx.reply(
+`📊 Bot Statistics
 
-  saveDB(db);
-
-  ctx.reply("✅ All users reset successfully!");
+👥 Total Users: ${totalUsers}`
+  );
 });
 
 /* ================= ERROR ================= */
