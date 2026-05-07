@@ -1,7 +1,7 @@
 const { Telegraf, Markup } = require("telegraf");
 const fs = require("fs");
 
-const bot = new Telegraf("YOUR_BOT_TOKEN");
+const bot = new Telegraf("8709620585:AAE5DcfaywayhV0t_LTTlT6AGiWV6_RF4Ao");
 
 const ADMIN_ID = "8136997138";
 const DB_FILE = "./db.json";
