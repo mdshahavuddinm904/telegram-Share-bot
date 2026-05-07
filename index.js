@@ -20,7 +20,7 @@ function saveDB(data) {
 }
 
 /* ================= JOIN CHECK ================= */
-async function checkJJoinoin(ctx) {
+async function checkJoin(ctx) {
   try {
     const res = await bot.telegram.getChatMember(
       "@MiniDemoUpdate",
@@ -95,6 +95,7 @@ function getWelcome() {
 📊 /balance - Check your account
 💸 /withdraw - Withdraw money
 🎁 /bonus - Daily bonus
+👥 /users - Total users (Admin)
 
 🚀 Invite friends & earn money easily!`;
 }
@@ -134,6 +135,7 @@ bot.action("check_join", async (ctx) => {
 
 /* ================= MIDDLEWARE ================= */
 async function mustJoin(ctx, next) {
+
   if (ctx.from.id.toString() === ADMIN_ID.toString()) {
     return next();
   }
@@ -149,7 +151,9 @@ async function mustJoin(ctx, next) {
 
 /* ================= REFER ================= */
 bot.command("refer", mustJoin, (ctx) => {
-  const link = `https://t.me/${ctx.botInfo.username}?start=${ctx.from.id}`;
+
+  const link =
+    `https://t.me/${ctx.botInfo.username}?start=${ctx.from.id}`;
 
   ctx.reply(
     `🔗 Your Link:\n${link}\n\n💰 Earn $20 per referral`
@@ -158,6 +162,7 @@ bot.command("refer", mustJoin, (ctx) => {
 
 /* ================= BALANCE ================= */
 bot.command("balance", mustJoin, (ctx) => {
+
   const db = loadDB();
 
   const user = db.users[ctx.from.id];
@@ -175,6 +180,7 @@ bot.command("balance", mustJoin, (ctx) => {
 
 /* ================= BONUS ================= */
 bot.command("bonus", mustJoin, (ctx) => {
+
   const db = loadDB();
 
   const user = db.users[ctx.from.id];
@@ -195,6 +201,7 @@ bot.command("bonus", mustJoin, (ctx) => {
 
 /* ================= WITHDRAW ================= */
 bot.command("withdraw", mustJoin, (ctx) => {
+
   ctx.reply(
     "💸 Select Withdraw Method:",
     Markup.inlineKeyboard([
@@ -213,6 +220,7 @@ bot.command("withdraw", mustJoin, (ctx) => {
 
 /* ================= ASK NUMBER ================= */
 function askNumber(ctx, method) {
+
   withdrawState[ctx.from.id] = {
     step: "number",
     method
@@ -227,11 +235,13 @@ bot.action("wd_binance", (ctx) => askNumber(ctx, "Binance"));
 
 /* ================= MESSAGE ================= */
 bot.on("text", async (ctx) => {
+
   const db = loadDB();
 
   const id = ctx.from.id;
 
   if (withdrawState[id]) {
+
     const state = withdrawState[id];
 
     const user = db.users[id];
@@ -260,6 +270,7 @@ bot.on("text", async (ctx) => {
       }
 
       if (!user || user.balance < amount || amount < 5) {
+
         delete withdrawState[id];
 
         return ctx.reply(
