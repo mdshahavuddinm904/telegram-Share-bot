@@ -423,7 +423,7 @@ bot.action(/reject_(.+)_(.+)_(.+)/, async (ctx) => {
 });
 
 /* ================= USERS ================= */
-bot.command("users", async (ctx) => {
+bot.command("users", mustJoin, async (ctx) => {
 
   if (ctx.from.id.toString() !== ADMIN_ID.toString()) {
     return ctx.reply("❌ Not allowed");
